@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Live Picnic 🧺</title>
+    <style>
+        :root {
+            --primary-pink: #ffb7b2;
+            --pastel-green: #e2f0cb;
+            --wood-brown: #d4a373;
+            --text-dark: #6d5959;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #fefae0;
+            color: var(--text-dark);
+            overflow-x: hidden;
+            height: 100vh;
+        }
+
+        /* --- OVERLAY POPUP --- */
+        #popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 245, 245, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+
+        .popup-card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+            border: 3px solid var(--primary-pink);
+        }
+
+        .popup-card h2 {
+            margin-bottom: 25px;
+            color: #e56b6f;
+            font-size: 1.8rem;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            position: relative;
+            height: 60px;
+        }
+
+        .btn {
+            padding: 12px 35px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        #yes-btn {
+            background-color: var(--primary-pink);
+            color: white;
+        }
+
+        #no-btn {
+            background-color: #e0e0e0;
+            color: #757575;
+            position: absolute;
+        }
+
+        /* --- MAIN INTERFACE --- */
+        #main-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            height: 100vh;
+            grid-template-rows: auto 1fr auto;
+        }
+
+        header {
+            background-color: white;
+            text-align: center;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        header h1 {
+            color: #e56b6f;
+            font-size: 1.5rem;
+        }
+
+        .picnic-container {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+            padding: 20px;
+            height: calc(100vh - 120px);
+        }
+
+        @media (max-width: 768px) {
+            .picnic-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 400px 1fr;
+                height: auto;
+            }
+        }
+
+        .canvas-area {
+            background-color: var(--pastel-green);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            border: 4px dashed #b5c99a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .blanket {
+            width: 85%;
+            height: 85%;
+            background-color: #ffffff;
+            background-image: linear-gradient(90deg, rgba(255, 183, 178, 0.4) 50%, transparent 50%),
+                              linear-gradient(rgba(255, 183, 178, 0.4) 50%, transparent 50%);
+            background-size: 40px 40px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .food-pantry {
+            background: white;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            height: 100%;
+        }
+
+        .food-basket {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            background: #faedcd;
+            padding: 10px;
+            border-radius: 10px;
+            border: 2px solid var(--wood-brown);
+        }
+
+        .food-item {
+            font-size: 2rem;
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s;
+        }
+        
+        .food-item:hover { transform: scale(1.2); }
+
+        .placed-food {
+            position: absolute;
+            font-size: 3rem;
+            cursor: move;
+            user-select: none;
+            z-index: 10;
+            transform: translate(-50%, -50%);
+            transition: transform 0.2s ease-out;
+        }
+
+        /* Messenger Box */
+        .chat-box {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            background: #fff5f5;
+            border-radius: 10px;
+            padding: 10px;
+            border: 1px solid var(--primary-pink);
+            overflow: hidden;
+        }
+
+        .messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .msg {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            max-width: 85%;
+            align-self: flex-start;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            word-break: break-word;
+        }
+
+        .msg.partner {
+            background: var(--primary-pink);
+            color: white;
+            align-self: flex-end;
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 5px;
+        }
+
+        .chat-input-area input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        .chat-input-area button {
+            background: #e56b6f;
+            color: white;
+            border: none;
+            padding: 0 15px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+    </style>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+    <div id="popup-overlay">
+        <div class="popup-card">
+            <h2>Would you like to go on a digital date with me? 🌹</h2>
+            <div class="btn-container">
+                <button class="btn" id="yes-btn" onclick="acceptDate()">Yes!</button>
+                <button class="btn" id="no-btn" onmouseover="moveNoButton()" onclick="moveNoButton()">No</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-content">
+        <header>
+            <h1>Happy Monthsary, My Love! 🧺✨</h1>
+            <p>Click a food to place it, drag to move, double-click to eat it!</p>
+        </header>
+
+        <div class="picnic-container">
+            <div class="canvas-area" id="meadow">
+                <div class="blanket" id="blanket"></div>
+            </div>
+
+            <div class="food-pantry">
+                <h3>Our Picnic Basket</h3>
+                <div class="food-basket">
+                    <div class="food-item" onclick="spawnFood('🍓')">🍓</div>
+                    <div class="food-item" onclick="spawnFood('🥪')">🥪</div>
+                    <div class="food-item" onclick="spawnFood('🍰')">🍰</div>
+                    <div class="food-item" onclick="spawnFood('🧃')">🧃</div>
+                    <div class="food-item" onclick="spawnFood('🍩')">🍩</div>
+                    <div class="food-item" onclick="spawnFood('🍪')">🍪</div>
+                    <div class="food-item" onclick="spawnFood('🍕')">🍕</div>
+                    <div class="food-item" onclick="spawnFood('🍦')">🍦</div>
+                    <div class="food-item" onclick="spawnFood('🍔')">🍔</div>
+                    <div class="food-item" onclick="spawnFood('🥂')">🥂</div>
+                </div>
+
+                <h3>Live Notes 💬</h3>
+                <div class="chat-box">
+                    <div class="messages" id="message-screen"></div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="Say something sweet..." onkeypress="handleKeyPress(event)">
+                        <button onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- !!! INITIALIZE FIREBASE !!! ---
+        // PASTE YOUR FIREBASE CONFIG MATRIX BELOW:
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const foodRef = database.ref('picnic/food');
+        const chatRef = database.ref('picnic/chat');
+
+        // Assign a random temporary session user ID so the chat knows who sent what
+        const myUserId = "user_" + Math.floor(Math.random() * 1000000);
+
+        // 1. Popup Script
+        function moveNoButton() {
+            const noBtn = document.getElementById('no-btn');
+            const x = Math.random() * 160 - 80; 
+            const y = Math.random() * 80 - 40;  
+            noBtn.style.transform = `translate(${x}px, ${y}px)`;
+        }
+
+        function acceptDate() {
+            const overlay = document.getElementById('popup-overlay');
+            const mainContent = document.getElementById('main-content');
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                mainContent.style.display = 'grid';
+                setTimeout(() => mainContent.style.opacity = '1', 50);
+            }, 500);
+        }
+
+        // 2. Real-time Food Dynamics
+        const blanket = document.getElementById('blanket');
+
+        function spawnFood(emoji) {
+            // Spawn items directly in the middle of the blanket initially
+            const newFoodRef = foodRef.push();
+            newFoodRef.set({
+                emoji: emoji,
+                pctX: 50,
+                pctY: 50
+            });
+        }
+
+        // Listen for additions, moves, and deletions in the database
+        foodRef.on('value', (snapshot) => {
+            blanket.innerHTML = ''; // Refresh canvas
+            const data = snapshot.val();
+            if (!data) return;
+
+            Object.keys(data).forEach((key) => {
+                const foodData = data[key];
+                const foodEl = document.createElement('div');
+                foodEl.className = 'placed-food';
+                foodEl.innerText = foodData.emoji;
+                foodEl.style.left = foodData.pctX + '%';
+                foodEl.style.top = foodData.pctY + '%';
+
+                // Handle Double Click to delete (eat)
+                foodEl.addEventListener('dblclick', () => {
+                    foodRef.child(key).remove();
+                });
+
+                // Handle Dragging
+                makeElementDraggable(foodEl, key);
+                blanket.appendChild(foodEl);
+            });
+        });
+
+        function makeElementDraggable(elmnt, key) {
+            let active = false;
+
+            elmnt.onmousedown = dragStart;
+            elmnt.ontouchstart = dragStart;
+
+            function dragStart(e) {
+                active = true;
+                document.onmouseup = dragEnd;
+                document.onmousemove = dragMove;
+                document.ontouchend = dragEnd;
+                document.ontouchmove = dragMove;
+            }
+
+            function dragMove(e) {
+                if (!active) return;
+                e.preventDefault();
+                
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                const rect = blanket.getBoundingClientRect();
+                // Calculate percentage relative to the canvas size so it looks right on both monitors/phones
+                let pctX = ((clientX - rect.left) / rect.width) * 100;
+                let pctY = ((clientY - rect.top) / rect.height) * 100;
+
+                // Keep bounds safe
+                if(pctX < 0) pctX = 0; if(pctX > 100) pctX = 100;
+                if(pctY < 0) pctY = 0; if(pctY > 100) pctY = 100;
+
+                elmnt.style.left = pctX + '%';
+                elmnt.style.top = pctY + '%';
+
+                // Update database position live
+                foodRef.child(key).update({ pctX: pctX, pctY: pctY });
+            }
+
+            function dragEnd() {
+                active = false;
+                document.onmouseup = null;
+                document.onmousemove = null;
+                document.ontouchend = null;
+                document.ontouchmove = null;
+            }
+        }
+
+        // 3. Real-time Message Syncing
+        const msgScreen = document.getElementById('message-screen');
+        const chatInput = document.getElementById('chat-input');
+
+        function sendMessage() {
+            const text = chatInput.value.trim();
+            if (text === "") return;
+
+            chatRef.push().set({
+                userId: myUserId,
+                text: text,
+                timestamp: Date.now()
+            });
+            chatInput.value = "";
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        // Render messages when updated in backend
+        chatRef.orderByChild('timestamp').limitToLast(25).on('value', (snapshot) => {
+            msgScreen.innerHTML = '';
+            const data = snapshot.val();
+            if (!data) return;
+
+            Object.keys(data).forEach((key) => {
+                const msgData = data[key];
+                const msgDiv = document.createElement('div');
+                // Alternates sides based on who wrote it
+                msgDiv.className = `msg ${msgData.userId === myUserId ? '' : 'partner'}`;
+                msgDiv.innerText = msgData.text;
+                msgScreen.appendChild(msgDiv);
+            });
+            msgScreen.scrollTop = msgScreen.scrollHeight;
+        });
+    </script>
+</body>
+</html>
